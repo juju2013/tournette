@@ -36,15 +36,15 @@ Any change in your source will stop the current program, compile it and relaunch
 cd $HOME/projects/apolloXI/build
 TOURNETTE_REGEX="^.*\.(go|py)$" \
 TOURNETTE_BUILDCMD=./build.sh
-TOURNETTE_RUNCMD=/tmp/test/my_launcher.sh \
+TOURNETTE_RUNCMD=/ksc/SaturnV.sh \
 TOURNETTE_DIR=$HOME/projects/apolloXI/src \
+TOURNETTE_INTERVAL=1282 \
 tournette \
 -all -these options -go -to your_program
 ```
 
-That means: any go or python source change in `$HOME/projects/apolloXI/src` will trigger `$HOME/projects/apolloXI/build/build.sh` to compile 
-and then launch `/tmp/test/my_launcher.sh`,
-with `-all -these options -go -to your_program` as arguments.
+That means: any go or python source change in `$HOME/projects/apolloXI/src` will be detected within 1.282 seconds and will trigger 
+`$HOME/projects/apolloXI/build/build.sh` to compile and then launch `/ksc/SaturnV.sh` with `-all -these options -go -to your_program` as arguments.
 
 ## Copyright
 
