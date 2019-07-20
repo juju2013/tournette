@@ -1,3 +1,5 @@
+//(yet another) simple utility to rebuild/reload your Go program when source changes
+// Copyright 2019 by juju2013@github
 package main
 
 import (
@@ -36,9 +38,11 @@ func main() {
 	w.SetMaxEvents(1)
 	w.FilterOps(watcher.Rename, watcher.Move, watcher.Create, watcher.Remove, watcher.Write)
 
+	// Command to build your program, go build . if not specified
 	wbuildcmd = getOption("TOURNETTE_BUILDCMD", "go build .")
-	wruncmd = getOption("TOURNETTE_RUNCMD", "") // if empty, we'll try to find the latest changed file in current directory
-
+	// Command to run your program, empty if not specified
+	wruncmd = getOption("TOURNETTE_RUNCMD", "") // if empty, we'll try to find the latest changed executable in current directory
+	// Filter for source file to watch
 	wr := getOption("TOURNETTE_REGEX", "^.*\\.go$")
 	fmt.Printf("Watching %v\n", wr)
 	r := regexp.MustCompile(wr)
@@ -46,8 +50,10 @@ func main() {
 	woff = false
 	go evtHandler()
 
+	// Start by rebuild - and launch - your program
 	rebuild()
 
+	// The root directory for source to watch
 	wd := getOption("TOURNETTE_DIR", ".")
 	if err := w.AddRecursive(wd); err != nil {
 		fmt.Printf(err.Error())
@@ -59,12 +65,14 @@ func main() {
 		fmt.Printf(err.Error())
 		os.Exit(1)
 	}
+	// start watch source change, will loop
 	if err := w.Start(time.Millisecond * time.Duration(ww)); err != nil {
 		fmt.Printf(err.Error())
 		os.Exit(1)
 	}
 }
 
+// Handle watch events such as file change, error or exit
 func evtHandler() {
 	for {
 		select {
@@ -96,16 +104,19 @@ func rebuild() {
 	fmt.Printf("End of Build\n")
 }
 
-func postbuild() {
-	woff = false
-	runTarget()
-}
-
+// things to do before rebuild, disable file watch and kill the program
 func prebuild() {
 	woff = true
 	killTarget()
 }
 
+// things to do after rebuild, enable file watch and run the compiled program
+func postbuild() {
+	woff = false
+	runTarget()
+}
+
+// run the compiled program
 func runTarget() {
 	fmt.Printf("DEBUG:runTarget\n")
 	if len(wruncmd) == 0 {
@@ -122,6 +133,7 @@ func runTarget() {
 	}
 }
 
+// kill the program launched by runTarget()
 func killTarget() {
 	if wtarget == nil {
 		return
@@ -133,6 +145,7 @@ func killTarget() {
 	wtarget.Process.Kill()
 }
 
+// find the target program to launch, if not specified by TOURNETTE_RUNCMD
 func findTarget() {
 	var ffi os.FileInfo
 	files, err := ioutil.ReadDir(".")
@@ -157,6 +170,7 @@ func findTarget() {
 	}
 }
 
+// Start a program, pipe stderr/stdout to parent stdout
 func runDMC(prog string, args ...string) *exec.Cmd {
 	fmt.Printf("Running this way: %v %v\n", prog, args)
 	cmd := exec.Command(prog, args...)
