@@ -126,11 +126,12 @@ func runTarget() {
 		fmt.Printf("No exectuable found")
 		return
 	}
+  cmdargs := strings.Split(wruncmd," ")
+  cmdargs = append(cmdargs, "")
 	if len(os.Args) > 1 {
-		wtarget = runDMC(wruncmd, os.Args[1:]...)
-	} else {
-		wtarget = runDMC(wruncmd)
-	}
+    cmdargs = append(cmdargs, os.Args[1:]...)
+  }
+	wtarget = runDMC(cmdargs[0], cmdargs[1:]...)
 }
 
 // kill the program launched by runTarget()
