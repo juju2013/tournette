@@ -12,6 +12,7 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 )
 
@@ -126,11 +127,11 @@ func runTarget() {
 		fmt.Printf("No exectuable found")
 		return
 	}
-  cmdargs := strings.Split(wruncmd," ")
-  cmdargs = append(cmdargs, "")
+	cmdargs := strings.Split(wruncmd, " ")
+	cmdargs = append(cmdargs, "")
 	if len(os.Args) > 1 {
-    cmdargs = append(cmdargs, os.Args[1:]...)
-  }
+		cmdargs = append(cmdargs, os.Args[1:]...)
+	}
 	wtarget = runDMC(cmdargs[0], cmdargs[1:]...)
 }
 
@@ -143,7 +144,13 @@ func killTarget() {
 		return
 	}
 	fmt.Printf("Killing %v\n", wtarget.Process.Pid)
-	wtarget.Process.Kill()
+
+	pgid, err := syscall.Getpgid(wtarget.Process.Pid)
+	if err == nil {
+		syscall.Kill(-pgid, 15)
+	}
+
+	wtarget.Process.Wait()
 }
 
 // find the target program to launch, if not specified by TOURNETTE_RUNCMD
@@ -188,6 +195,7 @@ func runDMC(prog string, args ...string) *exec.Cmd {
 		return nil
 	}
 
+	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
 	if err := cmd.Start(); err != nil {
 		fmt.Printf(err.Error())
 		return nil
